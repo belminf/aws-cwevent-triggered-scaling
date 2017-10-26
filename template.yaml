@@ -45,7 +45,7 @@ Resources:
       ImageId: !Ref "AMI"
       InstanceType: !Ref "InstanceType"
       BlockDeviceMappings: 
-        - DeviceName: "/dev/sda1"
+        - DeviceName: "/dev/xvda"
           Ebs: 
             VolumeSize: "50"
             VolumeType: "gp2"
