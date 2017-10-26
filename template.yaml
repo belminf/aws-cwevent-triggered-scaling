@@ -141,6 +141,22 @@ Resources:
           ASG_NAME: !Ref ASG
       Timeout: "25"
 
+  LambdaPermissionScaleUp:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName: !Ref LambdaFunction
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt "CronScaleUp.Arn"
+
+  LambdaPermissionScaleBack:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName: !Ref LambdaFunction
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt "CronScaleBack.Arn"
+
   CronScaleUp:
     Type: "AWS::Events::Rule"
     Properties:
