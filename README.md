@@ -7,3 +7,6 @@ Went down this route because [ASG Scheduled Actions](https://docs.aws.amazon.com
 ## Example run
 
     aws cloudformation create-stack --capabilities CAPABILITY_IAM --template-body file://template.yaml --stack-name foobar --parameters ParameterKey=KeyName,ParameterValue=belminf@gmail.com-20171025 ParameterKey=AMI,ParameterValue=ami-8c1be5f6
+
+## To-do
+* Limit Lambda policy to only act on the actual ASG created
