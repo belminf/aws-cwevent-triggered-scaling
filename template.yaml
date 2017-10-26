@@ -10,6 +10,20 @@ Parameters:
   AMI: 
     Type: String
 
+  ScaleUpCron: 
+    Type: String
+
+  ScaleBackCron: 
+    Type: String
+
+  DesiredCapacity: 
+    Type: Number
+    Default: 1
+
+  ScaledUpCapacity: 
+    Type: Number
+    Default: 2
+
   InstanceType: 
     Type: String
     Default: t2.micro
@@ -45,7 +59,7 @@ Resources:
       LaunchConfigurationName: !Ref "LaunchConfig"
       HealthCheckGracePeriod: 300
       MinSize: "1"
-      MaxSize: "1"
+      MaxSize: !Ref DesiredCapacity
       MetricsCollection: 
         - 
           Granularity: "1Minute"
@@ -127,12 +141,38 @@ Resources:
           ASG_NAME: !Ref ASG
       Timeout: "25"
 
-  CronIncreaseDesiredCount:
+  CronScaleUp:
     Type: "AWS::Events::Rule"
     Properties:
-      ScheduleExpression: "cron(0 3 ? * 4#4 *)"
+      ScheduleExpression: !Join
+        - ''
+        - - "cron("
+          - !Ref ScaleUpCron
+          - ")"
       Targets:
         -
           Arn: !GetAtt "LambdaFunction.Arn"
           Id: "scale_asg"
-          Input: "{\"DESIRED_COUNT\": 2}"
+          Input: !Join
+            - ''
+            - - "{\"DESIRED_CAPACITY\":"
+              - !Ref ScaledUpCapacity
+              - "}"
+
+  CronScaleBack:
+    Type: "AWS::Events::Rule"
+    Properties:
+      ScheduleExpression: !Join
+        - ''
+        - - "cron("
+          - !Ref ScaleBackCron
+          - ")"
+      Targets:
+        -
+          Arn: !GetAtt "LambdaFunction.Arn"
+          Id: "scale_asg"
+          Input: !Join
+            - ''
+            - - "{\"DESIRED_CAPACITY\":"
+              - !Ref DesiredCapacity
+              - "}"

@@ -6,7 +6,10 @@ Went down this route because [ASG Scheduled Actions](https://docs.aws.amazon.com
 
 ## Example run
 
-    aws cloudformation create-stack --capabilities CAPABILITY_IAM --template-body file://template.yaml --stack-name foobar --parameters ParameterKey=KeyName,ParameterValue=belminf@gmail.com-20171025 ParameterKey=AMI,ParameterValue=ami-8c1be5f6
+Scales up to 2 at 3AM on the 2nd Sunday of the month and then scales down to 1 30 minutes later:
+
+    aws cloudformation update-stack --capabilities CAPABILITY_IAM --template-body file://template.yaml --stack-name foobar --parameters ParameterKey=KeyName,ParameterValue=belminf@amazon.com ParameterKey=AMI,ParameterValue=ami-8c1be5f6 ParameterKey=ScaleUpCron,ParameterValue="0 3 ? * 1#2 *" ParameterKey=ScaleBackCron,ParameterValue="30 3 ? * 1#2 *"
+
 
 ## To-do
 * Limit Lambda policy to only act on the actual ASG created
