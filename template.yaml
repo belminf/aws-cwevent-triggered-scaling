@@ -126,3 +126,13 @@ Resources:
         Variables:
           ASG_NAME: !Ref ASG
       Timeout: "25"
+
+  CronIncreaseDesiredCount:
+    Type: "AWS::Events::Rule"
+    Properties:
+      ScheduleExpression: "cron(0 3 ? * 4#4 *)"
+      Targets:
+        -
+          Arn: !GetAtt "LambdaFunction.Arn"
+          Id: "scale_asg"
+          Input: "{\"DESIRED_COUNT\": 2}"
