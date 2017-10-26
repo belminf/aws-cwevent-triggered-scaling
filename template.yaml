@@ -1,0 +1,125 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Example template for triggering scaling via CW Events
+
+Parameters: 
+
+  KeyName: 
+    Type: String
+
+  AMI: 
+    Type: String
+
+  InstanceType: 
+    Type: String
+    Default: t2.micro
+
+  AZ1: 
+    Type: String
+    Default: us-east-1a
+
+  AZ2: 
+    Type: String
+    Default: us-east-1b
+
+Resources:
+
+  LaunchConfig: 
+    Type: "AWS::AutoScaling::LaunchConfiguration"
+    Properties: 
+      KeyName: !Ref "KeyName"
+      ImageId: !Ref "AMI"
+      InstanceType: !Ref "InstanceType"
+      BlockDeviceMappings: 
+        - DeviceName: "/dev/sda1"
+          Ebs: 
+            VolumeSize: "50"
+            VolumeType: "gp2"
+
+  ASG: 
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    Properties: 
+      AvailabilityZones:
+        - us-east-1a
+        - us-east-1b  
+      LaunchConfigurationName: !Ref "LaunchConfig"
+      HealthCheckGracePeriod: 300
+      MinSize: "1"
+      MaxSize: "1"
+      MetricsCollection: 
+        - 
+          Granularity: "1Minute"
+          Metrics: 
+            - "GroupMinSize"
+            - "GroupMaxSize"
+
+  IAMRoleLambda:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        -
+          PolicyName: "cloudwatch_logs"
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement: 
+              - 
+                Effect: "Allow"
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvent"
+                Resource: "arn:aws:logs:*:*:*"
+        -
+          PolicyName: "asg_scaling"
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement: 
+              - 
+                Effect: "Allow"
+                Action:
+                  - "autoscaling:UpdateAutoScalingGroup"
+                Resource: "*"
+
+  LambdaFunction: 
+    Type: "AWS::Lambda::Function"
+    Properties: 
+      Handler: "index.handler"
+      Role: !GetAtt IAMRoleLambda.Arn
+      Code: 
+        ZipFile: |
+          import json
+          import boto3
+          import os
+          
+          def handler(event, context):
+              
+              # Gather variables
+              asg_name = os.environ['ASG_NAME']
+              desired_capacity = event['DESIRED_CAPACITY']
+          
+              # Print for debug
+              print("ASG_NAME: {}".format(asg_name))
+              print("DESIRED_CAPACITY: {}".format(desired_capacity))
+              
+              # Modify ASG
+              client = boto3.client('autoscaling')
+              response = client.update_auto_scaling_group(
+                  AutoScalingGroupName=asg_name,
+                  DesiredCapacity=desired_capacity,
+                  MaxSize=desired_capacity
+              )
+              
+              return True
+      Runtime: "python3.6"
+      Timeout: "25"
