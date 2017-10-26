@@ -122,4 +122,7 @@ Resources:
               
               return True
       Runtime: "python3.6"
+      Environment:
+        Variables:
+          ASG_NAME: !Ref ASG
       Timeout: "25"
